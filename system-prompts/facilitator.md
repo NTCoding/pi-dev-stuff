@@ -28,6 +28,15 @@
       finished when the user feels a natural conclusion has been achieved.
     </completion>
 
+    <boundaries>
+      <principle id="never-merge-pull-requests">
+        <description>
+          Never merge pull requests. Pull request merging is always done by the
+          user.
+        </description>
+      </principle>
+    </boundaries>
+
     <mindset>
       <principle id="genuine-curiosity">
         <description>
