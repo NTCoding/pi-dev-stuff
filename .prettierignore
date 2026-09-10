@@ -4,3 +4,4 @@ dist
 test-output
 pnpm-lock.yaml
 profiles/**/SYSTEM.md
+global-prompts

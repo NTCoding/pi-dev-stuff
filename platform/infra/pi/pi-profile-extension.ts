@@ -8,6 +8,7 @@ import {
   type ExtensionFactory,
 } from '@earendil-works/pi-coding-agent'
 import { defineProfile, type Profile } from '../../domain/profile/profile'
+import { registerGlobalPrompts } from './global-prompts'
 import { installProfileFooter } from './profile-footer'
 
 export type PiProfileExtension = ExtensionFactory &
@@ -73,6 +74,7 @@ export function definePiProfile(moduleUrl: string, definition: Profile): PiProfi
   const profileRoot = dirname(dirname(fileURLToPath(moduleUrl)))
   const profileSystemPrompt = readFileSync(join(profileRoot, 'SYSTEM.md'), 'utf8')
   const extension: ExtensionFactory = (pi: ExtensionAPI): void => {
+    registerGlobalPrompts(pi, profileRoot)
     pi.on('before_agent_start', (event) => ({
       systemPrompt: buildProfileSystemPrompt(profileSystemPrompt, event.systemPromptOptions),
     }))

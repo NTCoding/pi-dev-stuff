@@ -78,6 +78,17 @@ export default definePiProfile(import.meta.url, profile)
 
 `builtinProfileModel` makes built in provider and model identifiers compile time safe. Omit any defaults which should continue to come from the user’s Pi settings.
 
+## Global commands
+
+Prompt templates in `global-prompts/` at the repository root are available in every profile as commands. Each `.md` file is one command and its filename becomes the command name:
+
+```text
+global-prompts/
+  component-design.md
+```
+
+Type `/component-design` in any profile session to run it. The template body is sent as your message, with `$1`, `$2`, and `$ARGUMENTS` substituted from the arguments typed after the command name.
+
 ## Verification
 
 ```bash

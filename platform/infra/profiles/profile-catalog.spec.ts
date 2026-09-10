@@ -100,4 +100,27 @@ describe('profile catalog', () => {
       rmSync(profilesDirectory, { recursive: true })
     }
   })
+
+  it('rejects global prompt templates that collide with profile prompts', async () => {
+    const profilesDirectory = createCatalogSandbox()
+    try {
+      writeProfileModule(profilesDirectory, 'reviewer', 'reviewer')
+      const profilePromptsDirectory = join(profilesDirectory, 'reviewer', 'prompts')
+      const globalPromptsDirectory = join(profilesDirectory, '..', 'global-prompts')
+      mkdirSync(profilePromptsDirectory, { recursive: true })
+      mkdirSync(globalPromptsDirectory, { recursive: true })
+      writeFileSync(
+        join(profilePromptsDirectory, 'component-design.md'),
+        '---\ndescription: Profile component design\n---\nProfile body\n',
+      )
+      writeFileSync(
+        join(globalPromptsDirectory, 'component-design.md'),
+        '---\ndescription: Global component design\n---\nGlobal body\n',
+      )
+
+      await expect(loadProfileCatalog(profilesDirectory)).rejects.toThrow('collision')
+    } finally {
+      rmSync(profilesDirectory, { recursive: true })
+    }
+  })
 })

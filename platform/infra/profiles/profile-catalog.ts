@@ -5,6 +5,7 @@ import { builtinModels } from '@earendil-works/pi-ai/providers/all'
 import { DefaultResourceLoader } from '@earendil-works/pi-coding-agent'
 import { z } from 'zod'
 import { profileSchema, type Profile } from '../../domain/profile/profile'
+import { findGlobalPromptsDirectory } from '../pi/global-prompts'
 import {
   InvalidProfileModuleError,
   MissingProfileAssetError,
@@ -40,10 +41,12 @@ function validateSystemPrompt(profileName: string, path: string): void {
 }
 
 async function validatePiResources(profileName: string, profileRoot: string): Promise<void> {
+  const globalPromptsDirectory = findGlobalPromptsDirectory(profileRoot)
   const resourceLoader = new DefaultResourceLoader({
     cwd: profileRoot,
     agentDir: join(profileRoot, '.profile-validation'),
     additionalExtensionPaths: [profileRoot],
+    additionalPromptTemplatePaths: globalPromptsDirectory ? [globalPromptsDirectory] : [],
     noContextFiles: true,
   })
   await resourceLoader.reload()

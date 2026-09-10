@@ -19,6 +19,8 @@ Profiles belong in `profiles/<profile-name>`. A profile uses these built in conv
 
 Do not declare conventional resource paths in a profile. Add a path to TypeScript only when a resource cannot follow the convention.
 
+Global prompt templates (commands) belong in `global-prompts/`. Every profile loads them; a file's name becomes a command available in all profiles as `/name`.
+
 ## TypeScript
 
 Profile definitions and other project DSLs must be TypeScript. Do not create a custom DSL or use JSON or YAML for them. Standard tool configuration files are allowed where the tool requires them.
