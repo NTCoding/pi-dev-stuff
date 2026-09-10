@@ -7,8 +7,8 @@ export const profile = defineProfile({
   name: 'facilitator',
   description: 'Facilitates exploration and implementation without taking decisions for the user',
   defaults: {
-    model: builtinProfileModel(getBuiltinModel('openai-codex', 'gpt-5.6-sol')),
-    thinkingLevel: 'medium',
+    model: builtinProfileModel(getBuiltinModel('opencode-go', 'deepseek-v4-flash')),
+    thinkingLevel: 'high',
   },
 })
 
