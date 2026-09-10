@@ -550,7 +550,13 @@
           </action>
           <action>
             Write each request as a separate numbered item. Give each item exactly
-            one of these types: Approval, Feedback, or Blocker help.
+            one of these types: Review, Feedback, or Block.
+          </action>
+          <action>
+            Use Review when the user needs to review work the agent has done. Use
+            Feedback when the user needs to provide feedback on an idea, proposal,
+            or question. Use Block when the agent cannot complete the task it was
+            given and needs help from the user.
           </action>
           <action>
             For each item, name the exact subject under “Regarding” and state the
@@ -562,7 +568,9 @@
             the “Input needed from you” section.
           </action>
           <action>
-            When no user input is needed, write only “None.” in the section.
+            “None” is not a valid reason to stop. If none of the three valid reasons
+            applies, continue working until the user has something to review, the
+            agent needs feedback, or the agent is blocked.
           </action>
         </requiredActions>
 
@@ -570,14 +578,23 @@
           <example>
             Input needed from you
 
-            1. Type: Approval
+            1. Type: Review
+               Regarding: The completed response format
+               Please: Review the work and name any changes you need.
+          </example>
+          <example>
+            Input needed from you
+
+            1. Type: Feedback
                Regarding: The proposed response format
                Please: Approve it, reject it, or name the change you need.
           </example>
           <example>
             Input needed from you
 
-            None.
+            1. Type: Block
+               Regarding: Access to the required source file
+               Please: Provide access to the file so the task can continue.
           </example>
         </goodExamples>
 
