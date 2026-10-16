@@ -1,6 +1,6 @@
 import type { BuildSystemPromptOptions, Skill } from '@earendil-works/pi-coding-agent'
 import { describe, expect, it } from 'vitest'
-import { buildProfileSystemPrompt } from './pi-profile-extension'
+import { buildProfileSystemPrompt } from './profile-runtime'
 
 const skill: Skill = {
   name: 'review-change',

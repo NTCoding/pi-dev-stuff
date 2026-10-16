@@ -89,6 +89,27 @@ global-prompts/
 
 Type `/component-design` in any profile session to run it. The template body is sent as your message, with `$1`, `$2`, and `$ARGUMENTS` substituted from the arguments typed after the command name.
 
+## Using profiles without the launcher
+
+The launcher only works when you start Pi yourself. Hosts such as JetBrains IDEs start Pi over ACP and bypass the launcher entirely. The profile chooser extension solves this by moving profile selection into Pi itself, so any Pi start offers the choice.
+
+Register it once in your global Pi settings at `~/.pi/agent/settings.json`, using the absolute path to this repository:
+
+```json
+{
+  "extensions": ["/absolute/path/to/pi-dev-stuff/platform/infra/pi/profile-chooser.ts"]
+}
+```
+
+Behaviour:
+
+- In an interactive session, or over RPC (which is what ACP hosts use), Pi asks you to choose a profile at the start of a new session. The chosen profile's system prompt, model, thinking level, tools, and global commands apply from that point.
+- The choice is recorded in the session. Resuming that session reuses the profile without asking.
+- `/profile` switches the active profile mid-session. Skill, prompt, and theme paths from the new profile apply from the next session.
+- Non-interactive modes (JSON mode and print mode) have no UI to ask in, so the extension throws a clear error there.
+
+Do not use the chooser together with the launcher in the same session. Both set the profile system prompt, and the launcher's profile extension would be applied before the chooser asks.
+
 ## Verification
 
 ```bash

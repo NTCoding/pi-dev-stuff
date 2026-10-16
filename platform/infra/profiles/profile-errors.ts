@@ -46,3 +46,10 @@ export class PiLaunchError extends Error {
     this.name = 'PiLaunchError'
   }
 }
+
+export class ProfileChooserError extends Error {
+  constructor(message: string) {
+    super(message)
+    this.name = 'ProfileChooserError'
+  }
+}
