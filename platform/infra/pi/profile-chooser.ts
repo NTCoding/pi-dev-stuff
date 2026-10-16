@@ -127,6 +127,45 @@ async function selectProfile(
   return selectedEntry
 }
 
+/**
+ * Resolves a profile model the way the --model flag does: direct lookup,
+ * then a catalog refresh for registries that load lazily, then a unique
+ * match by model id alone for catalogs that name the provider differently.
+ */
+async function findProfileModel(
+  context: ExtensionContext,
+  provider: string,
+  modelId: string,
+): Promise<ReturnType<ExtensionContext['modelRegistry']['find']>> {
+  const model = context.modelRegistry.find(provider, modelId)
+  if (model) {
+    return model
+  }
+
+  try {
+    await context.modelRegistry.refresh()
+  } catch {
+    // A failed refresh leaves the catalog as-is; matching continues below.
+  }
+  const refreshed = context.modelRegistry.find(provider, modelId)
+  if (refreshed) {
+    return refreshed
+  }
+
+  const byModelId = context.modelRegistry.getAll().filter((candidate) => candidate.id === modelId)
+  if (byModelId.length === 1) {
+    return byModelId[0]
+  }
+
+  // Providers get renamed between catalog generations; prefer a candidate
+  // whose provider name is a prefix of the requested one (and vice versa).
+  const byProviderPrefix = byModelId.filter(
+    (candidate) =>
+      candidate.provider.startsWith(provider) || provider.startsWith(candidate.provider),
+  )
+  return byProviderPrefix.length === 1 ? byProviderPrefix[0] : undefined
+}
+
 async function applyProfile(
   pi: ExtensionAPI,
   context: ExtensionContext,
@@ -134,10 +173,10 @@ async function applyProfile(
 ): Promise<void> {
   const defaults = catalogEntry.profile.defaults
   if (defaults?.model) {
-    const model = context.modelRegistry.find(defaults.model.provider, defaults.model.id)
+    const model = await findProfileModel(context, defaults.model.provider, defaults.model.id)
     if (!model) {
       throw new ProfileChooserError(
-        `Profile "${catalogEntry.profile.name}" requires unknown model ${defaults.model.provider}/${defaults.model.id}`,
+        `Profile "${catalogEntry.profile.name}" requires unknown model ${defaults.model.provider}/${defaults.model.id}. Run "pi update --models" to refresh the model catalog.`,
       )
     }
 
