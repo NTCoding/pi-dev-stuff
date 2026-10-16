@@ -10,7 +10,11 @@ import type {
 import { profileSchema } from '../../domain/profile/profile'
 import type { ProfileCatalogEntry } from '../profiles/profile-catalog'
 import { ProfileChooserError } from '../profiles/profile-errors'
-import { installProfileRuntime, readProfileSystemPrompt } from './profile-runtime'
+import {
+  installProfileRuntime,
+  buildProfileSystemPrompt,
+  readProfileSystemPrompt,
+} from './profile-runtime'
 import { z } from 'zod'
 
 const profileChoiceEntryType = 'pi-dev-stuff-profile-choice'
@@ -184,6 +188,9 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
       installed.profileName = catalogEntry.profile.name
     }
 
+    // Restore a remembered profile at startup, without asking. Asking here
+    // would deadlock RPC hosts: Pi attaches its stdin reader only after
+    // binding extensions, so a startup dialog can never be answered.
     pi.on('session_start', async (_event, context) => {
       const catalog = await loadProfileCatalogViaExec(
         pi,
@@ -193,13 +200,29 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
       const rememberedEntry = findRememberedProfile(catalog, context.sessionManager.getEntries())
       if (rememberedEntry) {
         await applyChosenProfile(context, rememberedEntry, false)
-        return
+      }
+    })
+
+    // Ask at the first agent turn, when the host can answer the dialog.
+    pi.on('before_agent_start', async (event, context) => {
+      if (installed.profileName !== undefined) {
+        return undefined
       }
 
-      const selected = await selectProfile(context, catalog)
-      if (selected) {
-        await applyChosenProfile(context, selected, true)
+      const catalog = await loadProfileCatalogViaExec(
+        pi,
+        options.repositoryRoot,
+        options.profilesDirectory,
+      )
+      const rememberedEntry = findRememberedProfile(catalog, context.sessionManager.getEntries())
+      const selected = rememberedEntry ?? (await selectProfile(context, catalog))
+      if (!selected) {
+        return undefined
       }
+
+      await applyChosenProfile(context, selected, rememberedEntry === undefined)
+      const systemPrompt = readProfileSystemPrompt(selected.profileRoot)
+      return { systemPrompt: buildProfileSystemPrompt(systemPrompt, event.systemPromptOptions) }
     })
 
     pi.registerCommand('profile', {
@@ -219,7 +242,7 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
         await applyChosenProfile(context, selected, true)
         if (switching) {
           context.ui.notify(
-            `Profile switched to "${selected.profile.name}". Skill, prompt, and theme paths from the new profile apply from the next session.`,
+            `Profile switched to "${selected.profile.name}". The new profile applies from the next message.`,
             'info',
           )
         }
