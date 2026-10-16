@@ -1,15 +1,12 @@
 import type { SessionEntry } from '@earendil-works/pi-coding-agent'
 import { describe, expect, it } from 'vitest'
-import { loadProfileCatalog, type ProfileCatalogEntry } from '../profiles/profile-catalog'
-import { ProfileNotFoundError } from '../profiles/profile-errors'
+import type { ProfileCatalogEntry } from './profile-catalog'
 import {
   describeProfile,
   findProfileByLabel,
   findRememberedProfile,
   findRememberedProfileName,
 } from './profile-chooser'
-
-const profilesDirectory = new URL('../../../profiles', import.meta.url).pathname
 
 function createChoiceEntry(name: string, id: string, parentId: string | null): SessionEntry {
   return {
@@ -22,20 +19,15 @@ function createChoiceEntry(name: string, id: string, parentId: string | null): S
   }
 }
 
-function requireProfile(
-  catalog: readonly ProfileCatalogEntry[],
-  profileName: string,
-): ProfileCatalogEntry {
-  const found = catalog.find(({ profile }) => profile.name === profileName)
-  if (!found) {
-    throw new ProfileNotFoundError(
-      profileName,
-      catalog.map(({ profile }) => profile.name),
-    )
-  }
-
-  return found
+const facilitator: ProfileCatalogEntry = {
+  profile: { name: 'facilitator', description: 'Facilitates exploration' },
+  profileRoot: '/repo/profiles/facilitator',
 }
+const repoAwareDeveloper: ProfileCatalogEntry = {
+  profile: { name: 'repo-aware-developer', description: 'Implements specs' },
+  profileRoot: '/repo/profiles/repo-aware-developer',
+}
+const catalog: readonly ProfileCatalogEntry[] = [facilitator, repoAwareDeveloper]
 
 describe('remembered profile name', () => {
   it('returns the most recent chosen profile name', () => {
@@ -78,37 +70,28 @@ describe('remembered profile name', () => {
 })
 
 describe('remembered profile lookup', () => {
-  it('finds the catalog entry for a remembered profile', async () => {
-    const catalog = await loadProfileCatalog(profilesDirectory)
+  it('finds the catalog entry for a remembered profile', () => {
     const entries: SessionEntry[] = [createChoiceEntry('facilitator', '1', null)]
     const remembered = findRememberedProfile(catalog, entries)
     expect(remembered?.profile.name).toBe('facilitator')
   })
 
-  it('returns undefined for an unknown remembered profile', async () => {
-    const catalog = await loadProfileCatalog(profilesDirectory)
+  it('returns undefined for an unknown remembered profile', () => {
     const entries: SessionEntry[] = [createChoiceEntry('gone', '1', null)]
     expect(findRememberedProfile(catalog, entries)).toBeUndefined()
   })
 
-  it('returns undefined when nothing was chosen', async () => {
-    const catalog = await loadProfileCatalog(profilesDirectory)
+  it('returns undefined when nothing was chosen', () => {
     expect(findRememberedProfile(catalog, [])).toBeUndefined()
   })
 })
 
 describe('profile labels', () => {
-  it('labels a profile with its name and description', async () => {
-    const catalog = await loadProfileCatalog(profilesDirectory)
-    const facilitator = requireProfile(catalog, 'facilitator')
-
+  it('labels a profile with its name and description', () => {
     expect(describeProfile(facilitator)).toBe(`facilitator — ${facilitator.profile.description}`)
   })
 
-  it('finds a profile by its label', async () => {
-    const catalog = await loadProfileCatalog(profilesDirectory)
-    const facilitator = requireProfile(catalog, 'facilitator')
-
+  it('finds a profile by its label', () => {
     expect(findProfileByLabel(catalog, describeProfile(facilitator))?.profile.name).toBe(
       'facilitator',
     )

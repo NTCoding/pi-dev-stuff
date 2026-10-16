@@ -97,7 +97,7 @@ Register it once in your global Pi settings at `~/.pi/agent/settings.json`, usin
 
 ```json
 {
-  "extensions": ["/absolute/path/to/pi-dev-stuff/platform/infra/pi/profile-chooser.ts"]
+  "extensions": ["/absolute/path/to/pi-dev-stuff/platform/domain/profile/profile-chooser.ts"]
 }
 ```
 

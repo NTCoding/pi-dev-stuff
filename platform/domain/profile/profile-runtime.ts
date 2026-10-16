@@ -7,7 +7,7 @@ import {
 } from '@earendil-works/pi-coding-agent'
 import { buildProfileSystemPrompt } from '../../domain/profile/profile-system-prompt'
 import type { Profile } from '../../domain/profile/profile'
-import { registerGlobalPrompts } from './global-prompts'
+import { registerGlobalPrompts } from '../../infra/pi/global-prompts'
 import { installProfileFooter } from './profile-footer'
 
 export function readProfileSystemPrompt(profileRoot: string): string {

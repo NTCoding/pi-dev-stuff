@@ -7,6 +7,8 @@ All platform code belongs under one of these directories:
 - `platform/domain`: profile rules and domain concepts
 - `platform/infra`: generic integrations such as Pi, Git, HTTP, file system, and processes
 
+Nothing inside `platform/infra/<framework>/` may contain concepts from our domain. Everything in those folders uses only the language of the tool framework. Domain concepts belong in `platform/domain`, even when they are implemented against a framework's API.
+
 This architecture is documented but is not currently enforced by tooling. Follow it without adding an enforcement mechanism unless the user approves one.
 
 Profiles belong in `profiles/<profile-name>`. A profile uses these built in conventions:

@@ -9,7 +9,7 @@ import type {
 } from '@earendil-works/pi-coding-agent'
 import { parseProfileCatalog, type ProfileCatalogEntry } from '../../domain/profile/profile-catalog'
 import { buildProfileSystemPrompt } from '../../domain/profile/profile-system-prompt'
-import { ProfileChooserError } from '../profiles/profile-errors'
+import { ProfileChooserError } from './profile-chooser-errors'
 import {
   installProfileRuntime,
   buildSkillsPrompt,
