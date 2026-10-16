@@ -91,7 +91,7 @@ Type `/component-design` in any profile session to run it. The template body is 
 
 ## Using profiles without the launcher
 
-The launcher only works when you start Pi yourself. Hosts such as JetBrains IDEs start Pi over ACP and bypass the launcher entirely. The profile chooser extension solves this by moving profile selection into Pi itself, so any Pi start offers the choice.
+The launcher only works when you start Pi yourself. Hosts such as JetBrains Air start Pi through their own integration and bypass the launcher entirely. The profile chooser extension solves this by moving profile selection into Pi itself, so any Pi start offers the choice.
 
 Register it once in your global Pi settings at `~/.pi/agent/settings.json`, using the absolute path to this repository:
 
