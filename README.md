@@ -89,6 +89,29 @@ global-prompts/
 
 Type `/component-design` in any profile session to run it. The template body is sent as your message, with `$1`, `$2`, and `$ARGUMENTS` substituted from the arguments typed after the command name.
 
+## Using profiles without the launcher
+
+The launcher only works when you start Pi yourself. Hosts such as JetBrains Air start Pi through their own integration and bypass the launcher entirely. The profile chooser extension solves this by moving profile selection into Pi itself, so any Pi start offers the choice.
+
+Register it once in your global Pi settings at `~/.pi/agent/settings.json`, using the absolute path to this repository:
+
+```json
+{
+  "extensions": ["/absolute/path/to/pi-dev-stuff/platform/domain/profile/profile-chooser.ts"]
+}
+```
+
+Behaviour:
+
+- In a terminal, the chooser asks which profile to use at startup, before you type anything.
+- In RPC hosts such as JetBrains Air, the chooser asks when you send your first message, because that is the first point where the host can answer. Your first message waits until you have chosen, then is processed with the profile applied. A status widget shows the active profile.
+- The chooser applies the profile's system prompt, thinking level, tools, and global commands. It never changes the model: in a terminal the launcher passes the profile's model via `--model`, and hosts that pick a model before chatting keep that choice.
+- The choice is recorded in the session where one exists, so resuming reuses the profile. Hosts that run Pi without persistent sessions ask again per session.
+- `/profile` switches the active profile mid-session. The new system prompt applies from the next message; skill, prompt, and theme paths apply from the next session.
+- Non-interactive modes (JSON mode and print mode) have no UI to ask in, so the chooser throws a clear error there.
+
+Do not use the chooser together with the launcher in the same session. Both set the profile system prompt, and the launcher's profile extension would be applied before the chooser asks.
+
 ## Verification
 
 ```bash

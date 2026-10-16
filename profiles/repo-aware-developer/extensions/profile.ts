@@ -1,7 +1,7 @@
 import { getBuiltinModel } from '@earendil-works/pi-ai/providers/all'
 import { defineProfile } from '../../../platform/domain/profile/profile'
-import { builtinProfileModel } from '../../../platform/infra/pi/pi-model-reference'
-import { definePiProfile } from '../../../platform/infra/pi/pi-profile-extension'
+import { builtinProfileModel } from '../../../platform/domain/profile/pi-model-reference'
+import { definePiProfile } from '../../../platform/domain/profile/pi-profile-extension'
 
 export const profile = defineProfile({
   name: 'repo-aware-developer',

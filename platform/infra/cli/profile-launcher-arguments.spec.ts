@@ -1,6 +1,6 @@
 import { getBuiltinModel } from '@earendil-works/pi-ai/providers/all'
 import { describe, expect, it } from 'vitest'
-import { builtinProfileModel } from '../pi/pi-model-reference'
+import { builtinProfileModel } from '../../domain/profile/pi-model-reference'
 import type { ProfileCatalogEntry } from '../profiles/profile-catalog'
 import { buildPiArguments, parseProfileLauncherArguments } from './profile-launcher-arguments'
 
