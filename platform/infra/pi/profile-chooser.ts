@@ -127,67 +127,11 @@ async function selectProfile(
   return selectedEntry
 }
 
-/**
- * Resolves a profile model the way the --model flag does: direct lookup,
- * then a catalog refresh for registries that load lazily, then a unique
- * match by model id alone for catalogs that name the provider differently.
- */
-async function findProfileModel(
-  context: ExtensionContext,
-  provider: string,
-  modelId: string,
-): Promise<ReturnType<ExtensionContext['modelRegistry']['find']>> {
-  const model = context.modelRegistry.find(provider, modelId)
-  if (model) {
-    return model
-  }
-
-  try {
-    await context.modelRegistry.refresh()
-  } catch {
-    // A failed refresh leaves the catalog as-is; matching continues below.
-  }
-  const refreshed = context.modelRegistry.find(provider, modelId)
-  if (refreshed) {
-    return refreshed
-  }
-
-  const byModelId = context.modelRegistry.getAll().filter((candidate) => candidate.id === modelId)
-  if (byModelId.length === 1) {
-    return byModelId[0]
-  }
-
-  // Providers get renamed between catalog generations; prefer a candidate
-  // whose provider name is a prefix of the requested one (and vice versa).
-  const byProviderPrefix = byModelId.filter(
-    (candidate) =>
-      candidate.provider.startsWith(provider) || provider.startsWith(candidate.provider),
-  )
-  return byProviderPrefix.length === 1 ? byProviderPrefix[0] : undefined
-}
-
-async function applyProfile(
-  pi: ExtensionAPI,
-  context: ExtensionContext,
-  catalogEntry: ProfileCatalogEntry,
-): Promise<void> {
+function applyProfile(pi: ExtensionAPI, catalogEntry: ProfileCatalogEntry): void {
   const defaults = catalogEntry.profile.defaults
-  if (defaults?.model) {
-    const model = await findProfileModel(context, defaults.model.provider, defaults.model.id)
-    if (!model) {
-      throw new ProfileChooserError(
-        `Profile "${catalogEntry.profile.name}" requires unknown model ${defaults.model.provider}/${defaults.model.id}. Run "pi update --models" to refresh the model catalog.`,
-      )
-    }
-
-    const changed = await pi.setModel(model)
-    if (!changed) {
-      throw new ProfileChooserError(
-        `Unable to switch to model ${defaults.model.provider}/${defaults.model.id} for profile "${catalogEntry.profile.name}"`,
-      )
-    }
-  }
-
+  // The model belongs to the user and the host: Air users pick one before
+  // chatting, and terminal users get it from the launcher. Profiles only
+  // carry thinking level and tools here.
   if (defaults?.thinkingLevel) {
     pi.setThinkingLevel(defaults.thinkingLevel)
   }
@@ -211,16 +155,12 @@ export type ProfileChooserOptions = Readonly<{
 export function defineProfileChooser(options: ProfileChooserOptions): ExtensionFactory {
   return (pi: ExtensionAPI): void => {
     const installed: { profileName: string | undefined } = { profileName: undefined }
-    const applyChosenProfile = async (
-      context: ExtensionContext,
-      catalogEntry: ProfileCatalogEntry,
-      recordChoice: boolean,
-    ): Promise<void> => {
+    const applyChosenProfile = (catalogEntry: ProfileCatalogEntry, recordChoice: boolean): void => {
       if (installed.profileName === catalogEntry.profile.name) {
         return
       }
 
-      await applyProfile(pi, context, catalogEntry)
+      applyProfile(pi, catalogEntry)
       if (recordChoice) {
         pi.appendEntry(profileChoiceEntryType, { name: catalogEntry.profile.name })
       }
@@ -238,7 +178,7 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
       )
       const rememberedEntry = findRememberedProfile(catalog, context.sessionManager.getEntries())
       if (rememberedEntry) {
-        await applyChosenProfile(context, rememberedEntry, false)
+        applyChosenProfile(rememberedEntry, false)
       }
     })
 
@@ -259,7 +199,7 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
         return undefined
       }
 
-      await applyChosenProfile(context, selected, rememberedEntry === undefined)
+      applyChosenProfile(selected, rememberedEntry === undefined)
       const systemPrompt = readProfileSystemPrompt(selected.profileRoot)
       return { systemPrompt: buildProfileSystemPrompt(systemPrompt, event.systemPromptOptions) }
     })
@@ -278,7 +218,7 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
         }
 
         const switching = installed.profileName !== selected.profile.name
-        await applyChosenProfile(context, selected, true)
+        applyChosenProfile(selected, true)
         if (switching) {
           context.ui.notify(
             `Profile switched to "${selected.profile.name}". The new profile applies from the next message.`,
