@@ -72,9 +72,13 @@ export function findProfileByLabel(
 
 export function requireInteractiveUi(hasUi: boolean): void {
   if (hasUi !== true) {
-    throw new ProfileChooserError(
-      'No UI is available to choose a profile. Start Pi interactively or over RPC.',
-    )
+    const message =
+      'No UI is available to choose a profile. Start Pi interactively or over RPC. ' +
+      'Continuing without a profile.'
+    // Pi 1.3 print mode swallows extension errors from before_agent_start,
+    // so log the failure loudly before throwing it.
+    console.error(`[profile-chooser] ${message}`)
+    throw new ProfileChooserError(message)
   }
 }
 
@@ -175,6 +179,12 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
 
     // RPC path: ask at the first agent turn, when the host can answer.
     pi.on('before_agent_start', async (event, context) => {
+      if (context.mode !== 'tui' && context.mode !== 'rpc') {
+        // JSON and print modes have no way to answer; fail loudly.
+        requireInteractiveUi(false)
+        return undefined
+      }
+
       if (installed.profileName !== undefined || context.mode !== 'rpc') {
         return undefined
       }
