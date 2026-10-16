@@ -103,7 +103,8 @@ Register it once in your global Pi settings at `~/.pi/agent/settings.json`, usin
 
 Behaviour:
 
-- The chooser asks which profile to use when you send your first message in a session. The host presents the dialog natively: a terminal shows the selection list, and an RPC host such as JetBrains Air shows its own dialog. Your first message waits until you have chosen, then is processed with the profile applied.
+- In a terminal, the chooser asks which profile to use at startup, before you type anything.
+- In RPC hosts such as JetBrains Air, the chooser asks when you send your first message, because that is the first point where the host can answer. Your first message waits until you have chosen, then is processed with the profile applied. A status widget shows the active profile.
 - The chooser applies the profile's system prompt, thinking level, tools, and global commands. It never changes the model: in a terminal the launcher passes the profile's model via `--model`, and hosts that pick a model before chatting keep that choice.
 - The choice is recorded in the session where one exists, so resuming reuses the profile. Hosts that run Pi without persistent sessions ask again per session.
 - `/profile` switches the active profile mid-session. The new system prompt applies from the next message; skill, prompt, and theme paths apply from the next session.

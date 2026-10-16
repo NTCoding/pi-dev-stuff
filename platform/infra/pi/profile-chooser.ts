@@ -155,7 +155,11 @@ export type ProfileChooserOptions = Readonly<{
 export function defineProfileChooser(options: ProfileChooserOptions): ExtensionFactory {
   return (pi: ExtensionAPI): void => {
     const installed: { profileName: string | undefined } = { profileName: undefined }
-    const applyChosenProfile = (catalogEntry: ProfileCatalogEntry, recordChoice: boolean): void => {
+    const applyChosenProfile = (
+      context: ExtensionContext,
+      catalogEntry: ProfileCatalogEntry,
+      recordChoice: boolean,
+    ): void => {
       if (installed.profileName === catalogEntry.profile.name) {
         return
       }
@@ -165,11 +169,15 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
         pi.appendEntry(profileChoiceEntryType, { name: catalogEntry.profile.name })
       }
       installed.profileName = catalogEntry.profile.name
+      if (context.mode === 'rpc' && context.hasUI) {
+        context.ui.setWidget('profile', [`profile: ${catalogEntry.profile.name}`])
+      }
     }
 
-    // Restore a remembered profile at startup, without asking. Asking here
-    // would deadlock RPC hosts: Pi attaches its stdin reader only after
-    // binding extensions, so a startup dialog can never be answered.
+    // TUI can render dialogs during startup binding, so ask immediately.
+    // RPC hosts cannot: Pi attaches its stdin reader only after binding
+    // extensions, so a startup dialog would deadlock. There the chooser
+    // asks at the first agent turn, when the host can answer.
     pi.on('session_start', async (_event, context) => {
       const catalog = await loadProfileCatalogViaExec(
         pi,
@@ -178,13 +186,21 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
       )
       const rememberedEntry = findRememberedProfile(catalog, context.sessionManager.getEntries())
       if (rememberedEntry) {
-        applyChosenProfile(rememberedEntry, false)
+        applyChosenProfile(context, rememberedEntry, false)
+        return
+      }
+
+      if (context.mode === 'tui') {
+        const selected = await selectProfile(context, catalog)
+        if (selected) {
+          applyChosenProfile(context, selected, true)
+        }
       }
     })
 
-    // Ask at the first agent turn, when the host can answer the dialog.
+    // RPC path: ask at the first agent turn, when the host can answer.
     pi.on('before_agent_start', async (event, context) => {
-      if (installed.profileName !== undefined) {
+      if (installed.profileName !== undefined || context.mode !== 'rpc') {
         return undefined
       }
 
@@ -199,7 +215,7 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
         return undefined
       }
 
-      applyChosenProfile(selected, rememberedEntry === undefined)
+      applyChosenProfile(context, selected, rememberedEntry === undefined)
       const systemPrompt = readProfileSystemPrompt(selected.profileRoot)
       return { systemPrompt: buildProfileSystemPrompt(systemPrompt, event.systemPromptOptions) }
     })
@@ -218,7 +234,7 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
         }
 
         const switching = installed.profileName !== selected.profile.name
-        applyChosenProfile(selected, true)
+        applyChosenProfile(context, selected, true)
         if (switching) {
           context.ui.notify(
             `Profile switched to "${selected.profile.name}". The new profile applies from the next message.`,
