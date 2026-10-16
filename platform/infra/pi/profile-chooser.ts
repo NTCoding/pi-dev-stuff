@@ -123,6 +123,21 @@ async function selectProfile(
   return selectedEntry
 }
 
+async function findProfileModel(
+  context: ExtensionContext,
+  provider: string,
+  modelId: string,
+): Promise<ReturnType<ExtensionContext['modelRegistry']['find']>> {
+  const model = context.modelRegistry.find(provider, modelId)
+  if (model) {
+    return model
+  }
+
+  // The registry may not have loaded its catalog yet; refresh once and retry.
+  await context.modelRegistry.refresh()
+  return context.modelRegistry.find(provider, modelId)
+}
+
 async function applyProfile(
   pi: ExtensionAPI,
   context: ExtensionContext,
@@ -130,10 +145,10 @@ async function applyProfile(
 ): Promise<void> {
   const defaults = catalogEntry.profile.defaults
   if (defaults?.model) {
-    const model = context.modelRegistry.find(defaults.model.provider, defaults.model.id)
+    const model = await findProfileModel(context, defaults.model.provider, defaults.model.id)
     if (!model) {
       throw new ProfileChooserError(
-        `Profile "${catalogEntry.profile.name}" requires unknown model ${defaults.model.provider}/${defaults.model.id}`,
+        `Profile "${catalogEntry.profile.name}" requires unknown model ${defaults.model.provider}/${defaults.model.id}. Run "pi update --models" to refresh the model catalog.`,
       )
     }
 
@@ -185,20 +200,31 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
     }
 
     pi.on('session_start', async (_event, context) => {
-      const catalog = await loadProfileCatalogViaExec(
-        pi,
-        options.repositoryRoot,
-        options.profilesDirectory,
-      )
-      const rememberedEntry = findRememberedProfile(catalog, context.sessionManager.getEntries())
-      if (rememberedEntry) {
-        await applyChosenProfile(context, rememberedEntry, false)
-        return
-      }
+      try {
+        const catalog = await loadProfileCatalogViaExec(
+          pi,
+          options.repositoryRoot,
+          options.profilesDirectory,
+        )
+        const rememberedEntry = findRememberedProfile(catalog, context.sessionManager.getEntries())
+        if (rememberedEntry) {
+          await applyChosenProfile(context, rememberedEntry, false)
+          return
+        }
 
-      const selected = await selectProfile(context, catalog)
-      if (selected) {
-        await applyChosenProfile(context, selected, true)
+        const selected = await selectProfile(context, catalog)
+        if (selected) {
+          await applyChosenProfile(context, selected, true)
+        }
+      } catch (error) {
+        // Throwing out of session_start can destroy the transport in RPC
+        // hosts, so surface the failure through the UI when there is one.
+        if (context.hasUI === true && error instanceof ProfileChooserError) {
+          context.ui.notify(error.message, 'error')
+          return
+        }
+
+        throw error
       }
     })
 
