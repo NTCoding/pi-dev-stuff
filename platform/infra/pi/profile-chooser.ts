@@ -1,4 +1,4 @@
-import { dirname, resolve } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import type {
   CustomEntry,
@@ -7,11 +7,59 @@ import type {
   ExtensionFactory,
   SessionEntry,
 } from '@earendil-works/pi-coding-agent'
-import { loadProfileCatalog, type ProfileCatalogEntry } from '../profiles/profile-catalog'
+import { profileSchema } from '../../domain/profile/profile'
+import type { ProfileCatalogEntry } from '../profiles/profile-catalog'
 import { ProfileChooserError } from '../profiles/profile-errors'
 import { installProfileRuntime, readProfileSystemPrompt } from './profile-runtime'
+import { z } from 'zod'
 
 const profileChoiceEntryType = 'pi-dev-stuff-profile-choice'
+
+const serializedProfileCatalogSchema = z.array(
+  z.object({
+    profile: profileSchema,
+    profileRoot: z.string().min(1),
+  }),
+)
+
+function parseJson(output: string): unknown {
+  try {
+    return JSON.parse(output)
+  } catch {
+    throw new ProfileChooserError('Catalog process did not produce valid JSON')
+  }
+}
+
+function parseProfileCatalog(output: string): readonly ProfileCatalogEntry[] {
+  const result = serializedProfileCatalogSchema.safeParse(parseJson(output))
+  if (!result.success) {
+    throw new ProfileChooserError('Catalog process did not produce a valid profile list')
+  }
+
+  return result.data
+}
+
+/**
+ * Loads the catalog the same way the launcher does, in a child process via
+ * tsx. Importing profile modules from inside Pi's extension runtime is not
+ * reliable, so the validated catalog is produced outside and passed as JSON.
+ */
+async function loadProfileCatalogViaExec(
+  pi: ExtensionAPI,
+  repositoryRoot: string,
+  profilesDirectory: string,
+): Promise<readonly ProfileCatalogEntry[]> {
+  const catalogScript = join(repositoryRoot, 'platform', 'infra', 'cli', 'profile-catalog-json.ts')
+  const tsxExecutable = join(repositoryRoot, 'node_modules', '.bin', 'tsx')
+  const result = await pi.exec(tsxExecutable, [catalogScript, profilesDirectory])
+  if (result.code !== 0) {
+    throw new ProfileChooserError(
+      `Unable to load the profile catalog. If dependencies are missing, run "pnpm install" in ${repositoryRoot}. ${result.stderr}`,
+    )
+  }
+
+  return parseProfileCatalog(result.stdout)
+}
 
 export function findRememberedProfileName(entries: readonly SessionEntry[]): string | undefined {
   const chosenNames = entries
@@ -114,6 +162,7 @@ async function applyProfile(
 
 export type ProfileChooserOptions = Readonly<{
   profilesDirectory: string
+  repositoryRoot: string
 }>
 
 export function defineProfileChooser(options: ProfileChooserOptions): ExtensionFactory {
@@ -136,7 +185,11 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
     }
 
     pi.on('session_start', async (_event, context) => {
-      const catalog = await loadProfileCatalog(options.profilesDirectory)
+      const catalog = await loadProfileCatalogViaExec(
+        pi,
+        options.repositoryRoot,
+        options.profilesDirectory,
+      )
       const rememberedEntry = findRememberedProfile(catalog, context.sessionManager.getEntries())
       if (rememberedEntry) {
         await applyChosenProfile(context, rememberedEntry, false)
@@ -152,7 +205,11 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
     pi.registerCommand('profile', {
       description: 'Switch the active profile for this session',
       handler: async (_arguments, context) => {
-        const catalog = await loadProfileCatalog(options.profilesDirectory)
+        const catalog = await loadProfileCatalogViaExec(
+          pi,
+          options.repositoryRoot,
+          options.profilesDirectory,
+        )
         const selected = await selectProfile(context, catalog)
         if (!selected) {
           return
@@ -173,4 +230,7 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../../..')
 
-export default defineProfileChooser({ profilesDirectory: resolve(repositoryRoot, 'profiles') })
+export default defineProfileChooser({
+  profilesDirectory: resolve(repositoryRoot, 'profiles'),
+  repositoryRoot,
+})
