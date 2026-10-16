@@ -7,41 +7,16 @@ import type {
   ExtensionFactory,
   SessionEntry,
 } from '@earendil-works/pi-coding-agent'
-import { profileSchema } from '../../domain/profile/profile'
-import type { ProfileCatalogEntry } from '../profiles/profile-catalog'
+import { parseProfileCatalog, type ProfileCatalogEntry } from '../../domain/profile/profile-catalog'
+import { buildProfileSystemPrompt } from '../../domain/profile/profile-system-prompt'
 import { ProfileChooserError } from '../profiles/profile-errors'
 import {
   installProfileRuntime,
-  buildProfileSystemPrompt,
+  buildSkillsPrompt,
   readProfileSystemPrompt,
 } from './profile-runtime'
-import { z } from 'zod'
 
 const profileChoiceEntryType = 'pi-dev-stuff-profile-choice'
-
-const serializedProfileCatalogSchema = z.array(
-  z.object({
-    profile: profileSchema,
-    profileRoot: z.string().min(1),
-  }),
-)
-
-function parseJson(output: string): unknown {
-  try {
-    return JSON.parse(output)
-  } catch {
-    throw new ProfileChooserError('Catalog process did not produce valid JSON')
-  }
-}
-
-function parseProfileCatalog(output: string): readonly ProfileCatalogEntry[] {
-  const result = serializedProfileCatalogSchema.safeParse(parseJson(output))
-  if (!result.success) {
-    throw new ProfileChooserError('Catalog process did not produce a valid profile list')
-  }
-
-  return result.data
-}
 
 /**
  * Loads the catalog the same way the launcher does, in a child process via
@@ -216,8 +191,15 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
       }
 
       applyChosenProfile(context, selected, rememberedEntry === undefined)
-      const systemPrompt = readProfileSystemPrompt(selected.profileRoot)
-      return { systemPrompt: buildProfileSystemPrompt(systemPrompt, event.systemPromptOptions) }
+      return {
+        systemPrompt: buildProfileSystemPrompt({
+          profilePrompt: readProfileSystemPrompt(selected.profileRoot),
+          cwd: event.systemPromptOptions.cwd,
+          appendSystemPrompt: event.systemPromptOptions.appendSystemPrompt,
+          contextFiles: event.systemPromptOptions.contextFiles,
+          skillsPrompt: buildSkillsPrompt(event.systemPromptOptions),
+        }),
+      }
     })
 
     pi.registerCommand('profile', {
