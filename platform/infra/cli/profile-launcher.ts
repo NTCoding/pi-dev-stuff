@@ -88,7 +88,10 @@ function launchPi(
   userArguments: readonly string[],
 ): void {
   const argumentsList = buildPiArguments(catalogEntry, userArguments)
-  const result = spawnSync(piExecutable, argumentsList, { stdio: 'inherit' })
+  const result = spawnSync(piExecutable, argumentsList, {
+    stdio: 'inherit',
+    env: { ...process.env, PI_DEV_STUFF_LAUNCHER: '1' },
+  })
   if (result.error) {
     throw new PiLaunchError(`Unable to launch Pi: ${result.error.message}`)
   }
