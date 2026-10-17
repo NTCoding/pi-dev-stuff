@@ -133,6 +133,12 @@ export type ProfileChooserOptions = Readonly<{
 
 export function defineProfileChooser(options: ProfileChooserOptions): ExtensionFactory {
   return (pi: ExtensionAPI): void => {
+    if (process.env['PI_DEV_STUFF_LAUNCHER'] === '1') {
+      // The launcher already applies the chosen profile; asking again would
+      // double-prompt every launcher session.
+      return
+    }
+
     const installed: { profileName: string | undefined } = { profileName: undefined }
     const applyChosenProfile = (
       context: ExtensionContext,
