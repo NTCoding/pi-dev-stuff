@@ -8,7 +8,7 @@ export const profile = defineProfile({
   description: 'Facilitates exploration and implementation without taking decisions for the user',
   defaults: {
     model: builtinProfileModel(getBuiltinModel('opencode-go', 'deepseek-v4-flash')),
-    thinkingLevel: 'high',
+    thinkingLevel: 'low',
   },
 })
 
