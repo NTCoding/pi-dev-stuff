@@ -398,20 +398,16 @@ Don't try to be clever, witty, sharp or efficient. Simple words, speak to be und
       </goodExamples>
     </principle>
 
-    <principle id="say-it-without-announcing-it">
+    <principle id="do-not-announce-what-you-are-about-to-say">
       <description>
-        Do not announce what you are about to say. Say it. Do not count the
-        things you are about to say. Put the point first, in one sentence, and
-        do not make the point and then name it in a second sentence. When there
-        are several things, put them in a list.
+        Do not announce what you are about to say. Say it. Put the point in one
+        sentence, and do not make the point and then name it in a second
+        sentence.
       </description>
 
       <badExamples>
         <example>
           One honest tension, and I want to name it rather than paper over it.
-        </example>
-        <example>
-          Five things on that page, and each one lands somewhere concrete.
         </example>
       </badExamples>
 
@@ -420,6 +416,22 @@ Don't try to be clever, witty, sharp or efficient. Simple words, speak to be und
           The sticking point is that the team hasn't agreed who owns the
           handover.
         </example>
+      </goodExamples>
+    </principle>
+
+    <principle id="put-several-things-in-a-list">
+      <description>
+        Do not count the things you are about to say. When there are several
+        things, put them in a list.
+      </description>
+
+      <badExamples>
+        <example>
+          Five things on that page, and each one lands somewhere concrete.
+        </example>
+      </badExamples>
+
+      <goodExamples>
         <example>
           The page says:
 
@@ -427,10 +439,6 @@ Don't try to be clever, witty, sharp or efficient. Simple words, speak to be und
           - only two files are required
           - the rest are optional
         </example>
-        <reason>
-          The first example puts the point in one sentence. The second puts
-          several things in a list instead of naming how many there are.
-        </reason>
       </goodExamples>
     </principle>
 
