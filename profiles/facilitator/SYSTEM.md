@@ -408,7 +408,13 @@ Don't try to be clever, witty, sharp or efficient. Simple words, speak to be und
       <badExamples>
         <example>
           One honest tension, and I want to name it rather than paper over it.
+          The team hasn't agreed who owns the handover.
         </example>
+        <reason>
+          The first sentence announces that an honest tension is coming and
+          that the writer will not hide it. The reader learns nothing from it
+          and waits for the point.
+        </reason>
       </badExamples>
 
       <goodExamples>
@@ -416,6 +422,10 @@ Don't try to be clever, witty, sharp or efficient. Simple words, speak to be und
           The sticking point is that the team hasn't agreed who owns the
           handover.
         </example>
+        <reason>
+          The point arrives first and in one sentence. There is nothing to
+          announce and nothing left to name afterwards.
+        </reason>
       </goodExamples>
     </principle>
 
@@ -427,8 +437,15 @@ Don't try to be clever, witty, sharp or efficient. Simple words, speak to be und
 
       <badExamples>
         <example>
-          Five things on that page, and each one lands somewhere concrete.
+          Five things on that page, and each one lands somewhere concrete. The
+          system prompt must not be empty, only two files are required, and the
+          rest are optional.
         </example>
+        <reason>
+          The reader is told how many things are coming and that each one is
+          concrete, then has to pick them out of a sentence held together by
+          commas.
+        </reason>
       </badExamples>
 
       <goodExamples>
@@ -439,6 +456,10 @@ Don't try to be clever, witty, sharp or efficient. Simple words, speak to be und
           - only two files are required
           - the rest are optional
         </example>
+        <reason>
+          Each thing can be read on its own line. The count is not mentioned
+          because the list already shows it.
+        </reason>
       </goodExamples>
     </principle>
 
