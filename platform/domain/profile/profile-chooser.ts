@@ -106,12 +106,17 @@ async function selectProfile(
   return selectedEntry
 }
 
-function applyProfile(pi: ExtensionAPI, catalogEntry: ProfileCatalogEntry): void {
+function applyProfile(
+  pi: ExtensionAPI,
+  catalogEntry: ProfileCatalogEntry,
+  thinkingLevelIsOwnedByUser: boolean,
+): void {
   const defaults = catalogEntry.profile.defaults
-  // The model belongs to the user and the host: Air users pick one before
-  // chatting, and terminal users get it from the launcher. Profiles only
-  // carry thinking level and tools here.
-  if (defaults?.thinkingLevel) {
+  // The model and, over RPC, the thinking level belong to the user and the
+  // host: RPC hosts always set a thinking level before the first turn, and
+  // Air users pick one before chatting. Terminal users get both from the
+  // launcher. Profiles only carry a thinking level and tools here.
+  if (defaults?.thinkingLevel && thinkingLevelIsOwnedByUser !== true) {
     pi.setThinkingLevel(defaults.thinkingLevel)
   }
 
@@ -149,7 +154,7 @@ export function defineProfileChooser(options: ProfileChooserOptions): ExtensionF
         return
       }
 
-      applyProfile(pi, catalogEntry)
+      applyProfile(pi, catalogEntry, context.mode === 'rpc')
       if (recordChoice) {
         pi.appendEntry(profileChoiceEntryType, { name: catalogEntry.profile.name })
       }
